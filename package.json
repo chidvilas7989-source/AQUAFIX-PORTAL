@@ -1,0 +1,17 @@
+{
+  "name": "aquafix-portal",
+  "version": "1.0.0",
+  "description": "A real-time professional utility platform for reporting and managing water leaks. Optimized for Static Site deployment.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/chidvilas7989-source/AQUAFIX-PORTAL.git"
+  },
+  "keywords": [
+    "water-leak",
+    "aquafix",
+    "civic-tech",
+    "utility-management"
+  ],
+  "author": "Chidvilas",
+  "license": "ISC"
+}

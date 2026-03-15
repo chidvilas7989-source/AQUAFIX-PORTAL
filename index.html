@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AquaFix | Unified Leak Management Portal</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #002147; /* Navy Blue */
+            --primary-light: #003366;
+            --secondary: #0056b3; /* Action Blue */
+            --bg-light: #ffffff;
+            --bg-alt: #f8fafc;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --error: #ef4444;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', -apple-system, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-alt);
+            color: var(--text-main);
+            line-height: 1.5;
+            min-height: 100vh;
+        }
+
+        /* SPA View Management */
+        .view { display: none; }
+        .view.active { display: block; }
+
+        /* Header & Navigation */
+        .govt-header {
+            background: var(--primary);
+            color: white;
+            padding: 1rem 5%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .govt-logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 700;
+            font-size: 1.25rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+        }
+
+        .govt-logo span {
+            color: #cbd5e1;
+            font-weight: 400;
+        }
+
+        .nav-links a {
+            color: white;
+            text-decoration: none;
+            margin-left: 20px;
+            font-size: 0.9rem;
+            opacity: 0.8;
+            cursor: pointer;
+        }
+
+        .nav-links a:hover { opacity: 1; }
+
+        /* Main Layout */
+        main {
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+
+        .admin-main { max-width: 1200px; }
+
+        /* Cards */
+        .card {
+            background: var(--bg-light);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 2rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            margin-bottom: 2rem;
+        }
+
+        .card-header {
+            border-bottom: 2px solid var(--bg-alt);
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+        }
+
+        /* Forms */
+        .form-group { margin-bottom: 1.5rem; }
+        label { display: block; font-weight: 600; margin-bottom: 0.5rem; color: var(--text-main); }
+
+        input, textarea, select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 1rem;
+            outline: none;
+        }
+
+        input:focus, textarea:focus { border-color: var(--secondary); box-shadow: 0 0 0 3px rgba(0, 86, 179, 0.1); }
+
+        /* Buttons */
+        .btn {
+            display: inline-block;
+            padding: 0.75rem 1.5rem;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            text-align: center;
+            border: none;
+            transition: all 0.2s;
+        }
+
+        .btn-primary { background: var(--primary); color: white; width: 100%; }
+        .btn-primary:hover { background: var(--primary-light); }
+
+        .btn-secondary { background: var(--secondary); color: white; }
+
+        /* Gates/Overlays */
+        .gate-overlay {
+            position: fixed;
+            inset: 0;
+            background: var(--bg-alt);
+            z-index: 2000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .gate-content { max-width: 450px; }
+        .gate-icon { font-size: 3rem; margin-bottom: 1rem; color: var(--primary); }
+
+        /* Hidden Class */
+        .hidden { display: none !important; }
+
+        /* Dashboard States */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-item {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            text-align: center;
+        }
+
+        .stat-val { font-size: 2rem; font-weight: 700; color: var(--primary); }
+
+        /* Reports Table */
+        .table-container { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; }
+        th { text-align: left; padding: 1rem; background: var(--bg-alt); color: var(--text-muted); font-size: 0.85rem; text-transform: uppercase; }
+        td { padding: 1rem; border-bottom: 1px solid var(--border); }
+
+        .badge {
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
+
+        .badge-pending { background: #fef3c7; color: #92400e; }
+        .badge-completed { background: #d1fae5; color: #065f46; }
+
+        /* Repair Cards */
+        .task-card {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .task-img { width: 120px; height: 120px; object-fit: cover; border-radius: 4px; }
+
+        @media (max-width: 600px) {
+            .task-card { flex-direction: column; }
+            .task-img { width: 100%; height: 200px; margin-top: 1rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <header class="govt-header">
+        <div class="govt-logo" onclick="showView('citizen')">AquaFix <span id="portalName">Portal</span></div>
+        <nav class="nav-links">
+            <a onclick="showView('citizen')">Citizen</a>
+            <a onclick="showView('admin')">Admin</a>
+            <a onclick="showView('repair')">Repair Team</a>
+        </nav>
+    </header>
+
+    <!-- VIEWS -->
+
+    <!-- CITIZEN VIEW -->
+    <section id="citizenView" class="view">
+        <div id="geoGate" class="gate-overlay">
+            <div class="gate-content card">
+                <div class="gate-icon">📍</div>
+                <h2>Location Access Required</h2>
+                <p>To report a water leak, we need to verify your location. Please grant location access to continue.</p>
+                <button id="enableLocation" class="btn btn-primary">Enable Location Access</button>
+                <p id="geoError" class="hidden" style="color: var(--error); margin-top: 1rem;"></p>
+            </div>
+        </div>
+
+        <main id="citizenContent" class="hidden">
+            <div class="card">
+                <div class="card-header">
+                    <h1>Report a Water Leak</h1>
+                    <p style="color: var(--text-muted)">Public utility reporting system</p>
+                </div>
+                <form id="reportForm">
+                    <div class="form-group">
+                        <label>Your Current Location</label>
+                        <input type="text" id="locDisplay" readonly style="background: var(--bg-alt)">
+                    </div>
+                    <div class="form-group">
+                        <label for="complaint">Incident Details</label>
+                        <textarea id="complaint" placeholder="Describe the leak location and severity..." required></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="leakImage">Supporting Photograph (Optional)</label>
+                        <input type="file" id="leakImage" accept="image/*">
+                    </div>
+                    <button type="submit" class="btn btn-primary">Submit Official Report</button>
+                </form>
+            </div>
+        </main>
+    </section>
+
+    <!-- ADMIN VIEW -->
+    <section id="adminView" class="view">
+        <div id="adminGate" class="gate-overlay">
+            <div class="gate-content card">
+                <div class="gate-icon">🔐</div>
+                <h2>Administrative Access</h2>
+                <p>Please enter the administrative password to manage maintenance records.</p>
+                <div class="form-group" style="margin-top: 1rem;">
+                    <input type="password" id="adminPass" placeholder="Enter Password">
+                </div>
+                <button id="authAdmin" class="btn btn-primary">Login to Console</button>
+                <p id="adminAuthError" class="hidden" style="color: var(--error); margin-top: 1rem;">Invalid credentials.</p>
+            </div>
+        </div>
+
+        <main class="admin-main hidden" id="adminContent">
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <div class="stat-val" id="totalCount">0</div>
+                    <div style="color: var(--text-muted)">Total Reports</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-val" id="pendingCount" style="color: var(--warning)">0</div>
+                    <div style="color: var(--text-muted)">Pending Action</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-val" id="completedCount" style="color: var(--success)">0</div>
+                    <div style="color: var(--text-muted)">Completed Repairs</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h2>Maintenance Registry</h2>
+                </div>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Received</th>
+                                <th>Coordinates</th>
+                                <th>Incident Description</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="registryBody">
+                            <tr><td colspan="5" style="text-align:center">Fetching official data...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </section>
+
+    <!-- REPAIR VIEW -->
+    <section id="repairView" class="view">
+        <div id="repairGate" class="gate-overlay">
+            <div class="gate-content card">
+                <div class="gate-icon">👷</div>
+                <h2>Technical Access Portal</h2>
+                <p>Authentication and location verification are mandatory for repair personnel.</p>
+                <div class="form-group" style="margin-top: 1rem;">
+                    <input type="password" id="repairPass" placeholder="Personnel Password">
+                </div>
+                <button id="authRepair" class="btn btn-primary">Authenticate & Verify</button>
+                <p id="repairAuthError" class="hidden" style="color: var(--error); margin-top: 1rem;"></p>
+            </div>
+        </div>
+
+        <main id="repairContent" class="hidden">
+            <div class="card-header" style="margin-bottom: 2rem">
+                <h2>Assigned Maintenance Tasks</h2>
+                <p style="color: var(--text-muted)">Live queue of reported water leaks</p>
+            </div>
+            <div id="taskList">
+                <div class="stat-item">Syncing with maintenance server...</div>
+            </div>
+        </main>
+    </section>
+
+    <!-- Success Popup -->
+    <div id="successOverlay" class="hidden" style="position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 3000;">
+        <div class="card" style="max-width: 400px; text-align: center;">
+            <h2 style="color: var(--success)">Submission Successful</h2>
+            <p>Your report has been logged in the government maintenance system.</p>
+            <button onclick="document.getElementById('successOverlay').classList.add('hidden'); location.reload()" class="btn btn-primary" style="margin-top: 1.5rem">OK</button>
+        </div>
+    </div>
+
+    <!-- Firebase & Logic -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, doc, deleteDoc, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
+
+        // FIREBASE CONFIG
+        const firebaseConfig = {
+            apiKey: "AIzaSyAc26vGNur13OpzdEtINJE9IQCiqAasjaE",
+            authDomain: "water-leakage-reporting.firebaseapp.com",
+            projectId: "water-leakage-reporting",
+            storageBucket: "water-leakage-reporting.firebasestorage.app",
+            messagingSenderId: "959108817830",
+            appId: "1:959108817830:web:746d349043b353a2bd6567"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const storage = getStorage(app);
+
+        // STATE
+        let coords = null;
+        let activeView = 'citizen';
+
+        // ROUTER
+        window.showView = (viewId) => {
+            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+            document.getElementById(viewId + 'View').classList.add('active');
+            
+            const portalName = document.getElementById('portalName');
+            if(viewId === 'citizen') portalName.innerText = 'Citizen Portal';
+            if(viewId === 'admin') portalName.innerText = 'Admin Console';
+            if(viewId === 'repair') portalName.innerText = 'Repair Task Force';
+            
+            activeView = viewId;
+        };
+
+        // INITIAL VIEW
+        showView('citizen');
+
+        // CITIZEN LOGIC
+        const btnLoc = document.getElementById('enableLocation');
+        btnLoc.onclick = () => {
+            navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                    coords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+                    document.getElementById('geoGate').classList.add('hidden');
+                    document.getElementById('citizenContent').classList.remove('hidden');
+                    document.getElementById('locDisplay').value = `Lat: ${coords.lat.toFixed(5)}, Lng: ${coords.lng.toFixed(5)}`;
+                },
+                (err) => {
+                    const msg = document.getElementById('geoError');
+                    msg.innerText = "Error: Please allow location access.";
+                    msg.classList.remove('hidden');
+                }
+            );
+        };
+
+        document.getElementById('reportForm').onsubmit = async (e) => {
+            e.preventDefault();
+            console.log("Submission started...");
+            const btn = e.target.querySelector('button');
+            const originalText = btn.innerText;
+            btn.disabled = true;
+            btn.innerText = "Processing...";
+
+            const complaint = document.getElementById('complaint').value;
+            const file = document.getElementById('leakImage').files[0];
+            let imageUrl = null;
+
+            try {
+                if (file) {
+                    console.log("Uploading image:", file.name);
+                    const storageRef = ref(storage, `govt_leaks/${Date.now()}_${file.name}`);
+                    const snap = await uploadBytes(storageRef, file);
+                    imageUrl = await getDownloadURL(snap.ref);
+                    console.log("Image uploaded. URL:", imageUrl);
+                }
+
+                console.log("Saving report to Firestore...");
+                await addDoc(collection(db, "reports"), {
+                    complaint,
+                    imageUrl,
+                    location: coords,
+                    status: 'pending',
+                    timestamp: serverTimestamp()
+                });
+                console.log("Firestore entry created successfully.");
+                document.getElementById('successOverlay').classList.remove('hidden');
+            } catch (err) {
+                console.error("Submission failed:", err);
+                alert("Critical System Error: Could not reach maintenance servers.");
+            } finally {
+                btn.disabled = false;
+                btn.innerText = originalText;
+            }
+        };
+
+        // ADMIN LOGIC
+        document.getElementById('authAdmin').onclick = () => {
+            const pass = document.getElementById('adminPass').value;
+            if (pass === "adminwlradd") {
+                document.getElementById('adminGate').classList.add('hidden');
+                document.getElementById('adminContent').classList.remove('hidden');
+            } else {
+                document.getElementById('adminAuthError').classList.remove('hidden');
+            }
+        };
+
+        onSnapshot(query(collection(db, "reports"), orderBy("timestamp", "desc")), (snap) => {
+            console.log("Real-time Update: Received reports snapshot (" + snap.size + ")");
+            
+            // Shared sync for both Admin and Repair views
+            updateAdminTable(snap);
+            updateRepairQueue(snap);
+        }, (err) => console.error("Snapshot error:", err));
+
+        function updateAdminTable(snap) {
+            const body = document.getElementById('registryBody');
+            let total = 0, pending = 0, completed = 0;
+            const rows = [];
+            
+            snap.forEach(d => {
+                const data = d.data();
+                total++;
+                if(data.status === 'pending') pending++;
+                if(data.status === 'completed') completed++;
+
+                rows.push(`
+                    <tr>
+                        <td>${data.timestamp ? new Date(data.timestamp.seconds * 1000).toLocaleString() : 'Just now'}</td>
+                        <td>${data.location ? `${data.location.lat.toFixed(4)}, ${data.location.lng.toFixed(4)}` : 'N/A'}</td>
+                        <td title="${data.complaint}">${data.complaint.substring(0, 30)}...</td>
+                        <td><span class="badge badge-${data.status}">${data.status}</span></td>
+                        <td><button onclick="window.removeReport('${d.id}')" style="background:none;border:none;cursor:pointer">🗑️</button></td>
+                    </tr>
+                `);
+            });
+
+            document.getElementById('totalCount').innerText = total;
+            document.getElementById('pendingCount').innerText = pending;
+            document.getElementById('completedCount').innerText = completed;
+            body.innerHTML = rows.join('') || '<tr><td colspan="5" style="text-align:center">No records.</td></tr>';
+        }
+
+        window.removeReport = async (id) => {
+            if(confirm("Delete record?")) await deleteDoc(doc(db, "reports", id));
+        };
+
+        // REPAIR LOGIC
+        document.getElementById('authRepair').onclick = () => {
+            const pass = document.getElementById('repairPass').value;
+            if (pass === "maitainwlrteam") {
+                navigator.geolocation.getCurrentPosition((pos) => {
+                    document.getElementById('repairGate').classList.add('hidden');
+                    document.getElementById('repairContent').classList.remove('hidden');
+                }, () => alert("Location required for repair personnel."));
+            } else {
+                document.getElementById('repairAuthError').innerText = "Invalid Password";
+                document.getElementById('repairAuthError').classList.remove('hidden');
+            }
+        };
+
+        function updateRepairQueue(snap) {
+            const list = document.getElementById('taskList');
+            const tasks = [];
+            snap.forEach(d => {
+                const t = d.data();
+                if(t.status === 'pending') {
+                    tasks.push(`
+                        <div class="card task-card">
+                            <div style="flex:1">
+                                <h3>${t.complaint}</h3>
+                                <p style="font-size:0.8rem; color:var(--text-muted)">${t.timestamp ? new Date(t.timestamp.seconds * 1000).toLocaleString() : 'Recent'}</p>
+                                <button onclick="window.markDone('${d.id}')" class="btn btn-secondary" style="margin-top:1rem">Complete Repair</button>
+                            </div>
+                            ${t.imageUrl ? `<img src="${t.imageUrl}" class="task-img">` : ''}
+                        </div>
+                    `);
+                }
+            });
+            list.innerHTML = tasks.join('') || '<div class="stat-item">No pending tasks.</div>';
+        }
+
+        window.markDone = async (id) => {
+            if(confirm("Mark as fixed?")) {
+                await updateDoc(doc(db, "reports", id), { status: 'completed', completedAt: serverTimestamp() });
+            }
+        };
+
+    </script>
+</body>
+</html>

@@ -1,6 +1,0 @@
-services:
-  - type: static
-    name: aquafix-portal
-    env: static
-    buildCommand: ""
-    publishDir: "."
